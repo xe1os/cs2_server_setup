@@ -1,8 +1,15 @@
 #!/bin/bash
+
+export DEBIAN_FRONTEND=noninteractive
+
 AWS_REGION="us-east-1"
 CS2_DIR="/home/steam/cs2"
 SDK64_DIR="$HOME/.steam/sdk64/"
 STEAM_USER="steam"
+
+# Accept the SteamCMD license agreement automatically
+echo steam steam/license note '' | sudo debconf-set-selections
+echo steam steam/question select "I AGREE" | sudo debconf-set-selections
 
 sudo add-apt-repository -y multiverse
 sudo dpkg --add-architecture i386
@@ -10,8 +17,10 @@ sudo apt-get update
 sudo apt-get install -y lib32gcc-s1
 sudo apt-get install -y unzip
 sudo apt-get install -y jq
+sudo apt-get install -y steamcmd
 sudo snap install aws-cli --classic
-sudo apt install -y steamcmd
+
+ln -sf /usr/games/steamcmd /usr/bin/steamcmd
 
 # Retrieve the secret value from AWS Secrets Manager
 STEAM_USER_PW_JSON=$(aws secretsmanager get-secret-value --secret-id 'ec2-steam-user-pw' --region $AWS_REGION --query 'SecretString' --output text)
@@ -54,12 +63,8 @@ else
   echo "Directory $SDK64_DIR already exists."
 fi
 
-# Accept the SteamCMD license agreement automatically
-echo steam steam/license note '' | sudo debconf-set-selections
-echo steam steam/question select "I AGREE" | sudo debconf-set-selections
-
 # Run SteamCMD
-/usr/games/steamcmd
+steamcmd
 force_install_dir /home/steam/cs2
 login anonymous
 app_update 730 validate
