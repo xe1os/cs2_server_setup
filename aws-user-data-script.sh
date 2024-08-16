@@ -5,46 +5,44 @@ export DEBIAN_FRONTEND=noninteractive
 AWS_REGION="us-east-1"
 CS2_DIR="/home/steam/cs2"
 SDK64_DIR="$HOME/.steam/sdk64/"
-STEAM_USER="steam"
 
 # Accept the SteamCMD license agreement automatically
-echo steam steam/license note '' | sudo debconf-set-selections
-echo steam steam/question select "I AGREE" | sudo debconf-set-selections
+echo steam steam/question select "I AGREE" | sudo debconf-set-selections && echo steam steam/license note '' | sudo debconf-set-selections
 
 sudo add-apt-repository -y multiverse
 sudo dpkg --add-architecture i386
 sudo apt-get update
-sudo apt-get install -y lib32gcc-s1
+sudo apt update
 sudo apt-get install -y unzip
 sudo apt-get install -y jq
-sudo apt-get install -y steamcmd
+sudo apt install -y lib32z1 lib32gcc-s1 lib32stdc++6 steamcmd
 sudo snap install aws-cli --classic
 
-ln -sf /usr/games/steamcmd /usr/bin/steamcmd
-
 # Retrieve the secret value from AWS Secrets Manager
-STEAM_USER_PW_JSON=$(aws secretsmanager get-secret-value --secret-id 'ec2-steam-user-pw' --region $AWS_REGION --query 'SecretString' --output text)
-STEAM_USER_PW=$(echo "$STEAM_USER_PW_JSON" | jq -r '."ec2-user-steam-pw"')
 STEAM_GAME_SERVER_TOKEN_JSON=$(aws secretsmanager get-secret-value --secret-id 'steam-game-server-token' --region $AWS_REGION --query 'SecretString' --output text)
 STEAM_GAME_SERVER_TOKEN=$(echo "$STEAM_GAME_SERVER_TOKEN_JSON" | jq -r '."steam-game-server-token"')
 
 # Check if the user already exists
-if id "$STEAM_USER" &>/dev/null; then
-  echo "User $STEAM_USER already exists."
+if id "steam" &>/dev/null; then
+  echo "Steam user already exists."
 else
-  # Create a user account named steam to run SteamCMD safely, isolating it from the rest of the operating system.
-  # As the root user, create the steam user:
-  sudo useradd -m "$STEAM_USER"
-  echo "User $STEAM_USER creat ed."
-  echo "steam:$STEAM_USER_PW" | sudo chpasswd
-  # Add the 'steam' user to the 'sudo' group to grant sudo privileges
-  sudo usermod -aG sudo steam
-  # Configure 'steam' to use sudo without a password
-  echo "steam ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/steam
+  # Create group steam
+  sudo groupadd steam
+
+  # Create steam user, create his home dir & add it to steam group
+  sudo useradd -m steam -g steam && passwd -d steam
+
+  # Change owner of steamcmd sh folder to the user/group
+  chown -R steam:steam /usr/games
 fi
 
-sudo -u steam -s
-cd /home/steam || return
+# Create symlink to steamcmd in steam home directory
+ln -s /usr/games/steamcmd /home/steam/steamcmd
+
+# Execute steam update
+su steam -c "/home/steam/steamcmd +quit"
+
+chown -R steam:steam /home/steam/
 
 # Check if the cs2 directory exists
 if [ ! -d "$CS2_DIR" ]; then
@@ -64,13 +62,9 @@ else
 fi
 
 # Run SteamCMD
-steamcmd
-force_install_dir /home/steam/cs2
-login anonymous
-app_update 730 validate
-quit
+su steam -c "/home/steam/steamcmd +force_install_dir /home/steam/cs2 +login anonymous +app_update 730 validate +quit"
 
-cd /home/steam/cs2 || return
+# cd /home/steam/cs2 || return
 
 # Download the latest MetaMod build
 #wget https://mms.alliedmods.net/mmsdrop/2.0/mmsource-2.0.0-git1313-linux.tar.gz
@@ -103,6 +97,6 @@ cd /home/steam/cs2 || return
 ln -sf /home/steam/.local/share/Steam/steamcmd/linux64/steamclient.so /home/steam/.steam/sdk64/
 
 # Start the CS2 server
-/home/steam/cs2/game/bin/linuxsteamrt64/cs2 -dedicated +map de_dust2 +game_mode 1 +game_type 0 +sv_setsteamaccount "$STEAM_GAME_SERVER_TOKEN" -maxplayers 10
+sudo su steam -c "/home/steam/cs2/game/bin/linuxsteamrt64/cs2 -dedicated +map de_dust2 +game_mode 1 +game_type 0 +sv_setsteamaccount $STEAM_GAME_SERVER_TOKEN -maxplayers 10"
 
 EOF
