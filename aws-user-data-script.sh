@@ -5,6 +5,7 @@ export DEBIAN_FRONTEND=noninteractive
 AWS_REGION="us-east-1"
 CS2_DIR="/home/steam/cs2"
 SDK64_DIR="$HOME/.steam/sdk64/"
+USER="steam"
 
 # Accept the SteamCMD license agreement automatically
 echo steam steam/question select "I AGREE" | sudo debconf-set-selections && echo steam steam/license note '' | sudo debconf-set-selections
@@ -18,36 +19,33 @@ sudo apt-get install -y jq
 sudo apt install -y lib32z1 lib32gcc-s1 lib32stdc++6 steamcmd
 sudo snap install aws-cli --classic
 
-# Retrieve the secret value from AWS Secrets Manager
+STEAM_USER_PW_JSON=$(aws secretsmanager get-secret-value --secret-id 'ec2-steam-user-pw' --region $AWS_REGION --query 'SecretString' --output text)
+STEAM_USER_PW=$(echo "$STEAM_USER_PW_JSON" | jq -r '."ec2-user-steam-pw"')
 STEAM_GAME_SERVER_TOKEN_JSON=$(aws secretsmanager get-secret-value --secret-id 'steam-game-server-token' --region $AWS_REGION --query 'SecretString' --output text)
 STEAM_GAME_SERVER_TOKEN=$(echo "$STEAM_GAME_SERVER_TOKEN_JSON" | jq -r '."steam-game-server-token"')
 
 # Check if the user already exists
-if id "steam" &>/dev/null; then
-  echo "Steam user already exists."
+if id "$USER" &>/dev/null; then
+  echo "User $USER already exists."
 else
-  # Create group steam
-  sudo groupadd steam
-
-  # Create steam user, create his home dir & add it to steam group
-  sudo useradd -m steam -g steam && passwd -d steam
-
-  # Change owner of steamcmd sh folder to the user/group
-  chown -R steam:steam /usr/games
+  # Create a user account named steam to run SteamCMD safely, isolating it from the rest of the operating system.
+  # As the root user, create the steam user:
+  sudo useradd -m "$USER"
+  echo "User $USER created."
+  echo "steam:$STEAM_USER_PW" | sudo chpasswd
+  # Add the 'steam' user to the 'sudo' group to grant sudo privileges
+  sudo usermod -aG sudo steam
+  # Configure 'steam' to use sudo without a password
+  echo "steam ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/steam
 fi
 
-# Create symlink to steamcmd in steam home directory
-sudo ln -s /usr/games/steamcmd /home/steam/steamcmd
-
-# Execute steam update
-su steam -c "/home/steam/steamcmd +quit"
-
-chown -R steam:steam /home/steam/
+sudo -u steam -s
+cd /home/steam || return
 
 # Check if the cs2 directory exists
 if [ ! -d "$CS2_DIR" ]; then
   # Directory does not exist, so create it
-  sudo mkdir -p "$CS2_DIR"
+  mkdir -p "$CS2_DIR"
   echo "Directory $CS2_DIR created."
 else
   echo "Directory $CS2_DIR already exists."
@@ -55,14 +53,18 @@ fi
 
 if [ ! -d "$SDK64_DIR" ]; then
   # Directory does not exist, so create it
-  sudo mkdir -p "$SDK64_DIR"
+  mkdir -p "$SDK64_DIR"
   echo "Directory $SDK64_DIR created."
 else
   echo "Directory $SDK64_DIR already exists."
 fi
 
 # Run SteamCMD
-su steam -c "/home/steam/steamcmd +force_install_dir /home/steam/cs2 +login anonymous +app_update 730 validate +quit"
+/usr/games/steamcmd
+force_install_dir /home/steam/cs2
+login anonymous
+app_update 730 validate
+quit
 
 # cd /home/steam/cs2 || return
 
@@ -94,9 +96,9 @@ su steam -c "/home/steam/steamcmd +force_install_dir /home/steam/cs2 +login anon
 # rm MatchZy-0.7.13-with-cssharp-linux.zip
 
 # Symlink the steamclient.so to expected path
-sudo ln -sf /home/steam/.local/share/Steam/steamcmd/linux64/steamclient.so /home/steam/.steam/sdk64/
+ln -sf /home/steam/.local/share/Steam/steamcmd/linux64/steamclient.so /home/steam/.steam/sdk64/
 
 # Start the CS2 server
-sudo su steam -c "/home/steam/cs2/game/bin/linuxsteamrt64/cs2 -dedicated +map de_dust2 +game_mode 1 +game_type 0 +sv_setsteamaccount $STEAM_GAME_SERVER_TOKEN -maxplayers 10"
+/home/steam/cs2/game/bin/linuxsteamrt64/cs2 -dedicated +map de_dust2 +game_mode 1 +game_type 0 +sv_setsteamaccount "$STEAM_GAME_SERVER_TOKEN" -maxplayers 10
 
 EOF
