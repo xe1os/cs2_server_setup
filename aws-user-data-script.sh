@@ -37,7 +37,7 @@ else
 fi
 
 # Create symlink to steamcmd in steam home directory
-ln -s /usr/games/steamcmd /home/steam/steamcmd
+sudo ln -s /usr/games/steamcmd /home/steam/steamcmd
 
 # Execute steam update
 su steam -c "/home/steam/steamcmd +quit"
@@ -47,7 +47,7 @@ chown -R steam:steam /home/steam/
 # Check if the cs2 directory exists
 if [ ! -d "$CS2_DIR" ]; then
   # Directory does not exist, so create it
-  mkdir -p "$CS2_DIR"
+  sudo mkdir -p "$CS2_DIR"
   echo "Directory $CS2_DIR created."
 else
   echo "Directory $CS2_DIR already exists."
@@ -55,7 +55,7 @@ fi
 
 if [ ! -d "$SDK64_DIR" ]; then
   # Directory does not exist, so create it
-  mkdir -p "$SDK64_DIR"
+  sudo mkdir -p "$SDK64_DIR"
   echo "Directory $SDK64_DIR created."
 else
   echo "Directory $SDK64_DIR already exists."
@@ -94,7 +94,7 @@ su steam -c "/home/steam/steamcmd +force_install_dir /home/steam/cs2 +login anon
 # rm MatchZy-0.7.13-with-cssharp-linux.zip
 
 # Symlink the steamclient.so to expected path
-ln -sf /home/steam/.local/share/Steam/steamcmd/linux64/steamclient.so /home/steam/.steam/sdk64/
+sudo ln -sf /home/steam/.local/share/Steam/steamcmd/linux64/steamclient.so /home/steam/.steam/sdk64/
 
 # Start the CS2 server
 sudo su steam -c "/home/steam/cs2/game/bin/linuxsteamrt64/cs2 -dedicated +map de_dust2 +game_mode 1 +game_type 0 +sv_setsteamaccount $STEAM_GAME_SERVER_TOKEN -maxplayers 10"
