@@ -4,7 +4,7 @@ export DEBIAN_FRONTEND=noninteractive
 
 AWS_REGION="us-east-1"
 CS2_DIR="/home/steam/cs2"
-SDK64_DIR="$HOME/.steam/sdk64/"
+SDK64_DIR="/home/steam/.steam/sdk64/"
 USER="steam"
 
 # Accept the SteamCMD license agreement automatically
@@ -39,66 +39,59 @@ else
   echo "steam ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/steam
 fi
 
-sudo -u steam -s
-cd /home/steam || return
+sudo -i -u steam bash <<EOF
+  # Check if the cs2 directory exists
+  if [ ! -d "$CS2_DIR" ]; then
+    # Directory does not exist, so create it
+    mkdir -p "$CS2_DIR"
+    echo "Directory $CS2_DIR created."
+  else
+    echo "Directory $CS2_DIR already exists."
+  fi
 
-# Check if the cs2 directory exists
-if [ ! -d "$CS2_DIR" ]; then
-  # Directory does not exist, so create it
-  mkdir -p "$CS2_DIR"
-  echo "Directory $CS2_DIR created."
-else
-  echo "Directory $CS2_DIR already exists."
-fi
+  if [ ! -d "$SDK64_DIR" ]; then
+    # Directory does not exist, so create it
+    mkdir -p "$SDK64_DIR"
+    echo "Directory $SDK64_DIR created."
+  else
+    echo "Directory $SDK64_DIR already exists."
+  fi
 
-if [ ! -d "$SDK64_DIR" ]; then
-  # Directory does not exist, so create it
-  mkdir -p "$SDK64_DIR"
-  echo "Directory $SDK64_DIR created."
-else
-  echo "Directory $SDK64_DIR already exists."
-fi
+  # Run SteamCMD
+  /usr/games/steamcmd +force_install_dir /home/steam/cs2 +login anonymous +app_update 730 validate +quit
 
-# Run SteamCMD
-/usr/games/steamcmd
-force_install_dir /home/steam/cs2
-login anonymous
-app_update 730 validate
-quit
+  # cd /home/steam/cs2
 
-# cd /home/steam/cs2 || return
+  # Download the latest MetaMod build
+  #wget https://mms.alliedmods.net/mmsdrop/2.0/mmsource-2.0.0-git1313-linux.tar.gz
 
-# Download the latest MetaMod build
-#wget https://mms.alliedmods.net/mmsdrop/2.0/mmsource-2.0.0-git1313-linux.tar.gz
+  # Extract MetaMod to the CS2 directory
+  #tar -xzvf mmsource-2.0.0-git1313-linux.tar.gz -C /home/steam/cs2/game/csgo
 
-# Extract MetaMod to the CS2 directory
-#tar -xzvf mmsource-2.0.0-git1313-linux.tar.gz -C /home/steam/cs2/game/csgo
+  # Remove the downloaded MetaMod tar.gz file
+  #rm mmsource-1.11.0-git1140-linux.tar.gz
 
-# Remove the downloaded MetaMod tar.gz file
-#rm mmsource-1.11.0-git1140-linux.tar.gz
+  # Edit the gameinfo.gi file to add MetaMod to the SearchPaths section
+  #GAMEINFO_FILE="/home/steam/cs2/game/csgo/gameinfo.gi"
+  #if grep -q "Game    csgo/addons/metamod" "$GAMEINFO_FILE"; then
+  #    echo "MetaMod already added to SearchPaths."
+  #else
+  #    sed -i '/SearchPaths/r'<(echo '            Game    csgo/addons/metamod') "$GAMEINFO_FILE"
+  #    echo "MetaMod added to SearchPaths."
+  # fi
 
-# Edit the gameinfo.gi file to add MetaMod to the SearchPaths section
-#GAMEINFO_FILE="/home/steam/cs2/game/csgo/gameinfo.gi"
-#if grep -q "Game    csgo/addons/metamod" "$GAMEINFO_FILE"; then
-#    echo "MetaMod already added to SearchPaths."
-#else
-#    sed -i '/SearchPaths/r'<(echo '            Game    csgo/addons/metamod') "$GAMEINFO_FILE"
-#    echo "MetaMod added to SearchPaths."
-# fi
+  # Download the latest MatchZy build
+  # wget https://github.com/shobhit-pathak/MatchZy/releases/download/0.7.13/MatchZy-0.7.13-with-cssharp-linux.zip
 
-# Download the latest MatchZy build
-# wget https://github.com/shobhit-pathak/MatchZy/releases/download/0.7.13/MatchZy-0.7.13-with-cssharp-linux.zip
+  # Extract MatchZy to the CS2 directory
+  # unzip MatchZy-0.7.13-with-cssharp-linux.zip -d /home/steam/cs2/game/csgo
 
-# Extract MatchZy to the CS2 directory
-# unzip MatchZy-0.7.13-with-cssharp-linux.zip -d /home/steam/cs2/game/csgo
+  # Remove the downloaded MatchZy .zip file
+  # rm MatchZy-0.7.13-with-cssharp-linux.zip
 
-# Remove the downloaded MatchZy .zip file
-# rm MatchZy-0.7.13-with-cssharp-linux.zip
+  # Symlink the steamclient.so to expected path
+  ln -sf /home/steam/.local/share/Steam/steamcmd/linux64/steamclient.so /home/steam/.steam/sdk64/
 
-# Symlink the steamclient.so to expected path
-ln -sf /home/steam/.local/share/Steam/steamcmd/linux64/steamclient.so /home/steam/.steam/sdk64/
-
-# Start the CS2 server
-/home/steam/cs2/game/bin/linuxsteamrt64/cs2 -dedicated +map de_dust2 +game_mode 1 +game_type 0 +sv_setsteamaccount "$STEAM_GAME_SERVER_TOKEN" -maxplayers 10
-
+  # Start the CS2 server
+  /home/steam/cs2/game/bin/linuxsteamrt64/cs2 -dedicated +map de_dust2 +game_mode 1 +game_type 0 +sv_setsteamaccount "$STEAM_GAME_SERVER_TOKEN" -maxplayers 10
 EOF
