@@ -2,10 +2,22 @@
 
 export DEBIAN_FRONTEND=noninteractive
 
+USER="steam"
 AWS_REGION="us-east-1"
 CS2_DIR="/home/steam/cs2"
+CSGO_GAME_DIR="$CS2_DIR/game/csgo"
 SDK64_DIR="/home/steam/.steam/sdk64/"
-USER="steam"
+GITHUB_MATCHZY_SERVER_CONFIG_URL=""
+MATCHZY_DIR="$CSGO_GAME_DIR/cfg/MatchZy"
+MATCHZY_ADMINS_FILE_PATH="$MATCHZY_DIR/admins.json"
+MATCHZY_WHITELIST_FILE_PATH="$MATCHZY_DIR/whitelist.cfg"
+MATCHZY_CONFIG_FILE_PATH="$MATCHZY_DIR/config.cfg"
+MATCH_TEMP_SERVER_FILE_PATH="/tmp/matchzy-server.cfg"
+EAGLE_STEAM_ID="76561197972259038"
+GAMEINFO_FILE_PATH="$CSGO_GAME_DIR/gameinfo.gi"
+MATCHZY_VERSION="0.8.1"
+METAMOD_FILE_NAME="mmsource-2.0.0-git1313-linux.tar.gz"
+METAMOD_URL_PATH_VERSION="2.0"
 
 # Accept the SteamCMD license agreement automatically
 echo steam steam/question select "I AGREE" | sudo debconf-set-selections && echo steam steam/license note '' | sudo debconf-set-selections
@@ -23,6 +35,8 @@ STEAM_USER_PW_JSON=$(aws secretsmanager get-secret-value --secret-id 'ec2-steam-
 STEAM_USER_PW=$(echo "$STEAM_USER_PW_JSON" | jq -r '."ec2-user-steam-pw"')
 STEAM_GAME_SERVER_TOKEN_JSON=$(aws secretsmanager get-secret-value --secret-id 'steam-game-server-token' --region $AWS_REGION --query 'SecretString' --output text)
 STEAM_GAME_SERVER_TOKEN=$(echo "$STEAM_GAME_SERVER_TOKEN_JSON" | jq -r '."steam-game-server-token"')
+GH_MATCHZY_API_TOKEN_JSON=$(aws secretsmanager get-secret-value --secret-id 'gh-matchzy-api-token' --region $AWS_REGION --query 'SecretString' --output text)
+GH_MATCHZY_API_TOKEN=$(echo "$GH_MATCHZY_API_TOKEN_JSON" | jq -r '."gh-matchzy-api-token"')
 
 # Check if the user already exists
 if id "$USER" &>/dev/null; then
@@ -60,38 +74,50 @@ sudo -i -u steam bash <<EOF
   # Run SteamCMD
   /usr/games/steamcmd +force_install_dir /home/steam/cs2 +login anonymous +app_update 730 validate +quit
 
-  # cd /home/steam/cs2
+  cd "$CS2_DIR"
 
   # Download the latest MetaMod build
-  #wget https://mms.alliedmods.net/mmsdrop/2.0/mmsource-2.0.0-git1313-linux.tar.gz
+  wget "https://mms.alliedmods.net/mmsdrop/$METAMOD_URL_PATH_VERSION/$METAMOD_FILE_NAME"
 
   # Extract MetaMod to the CS2 directory
-  #tar -xzvf mmsource-2.0.0-git1313-linux.tar.gz -C /home/steam/cs2/game/csgo
+  tar -xzvf "$METAMOD_FILE_NAME" -C "$CSGO_GAME_DIR" 
 
   # Remove the downloaded MetaMod tar.gz file
-  #rm mmsource-1.11.0-git1140-linux.tar.gz
+  rm "$METAMOD_FILE_NAME"
 
   # Edit the gameinfo.gi file to add MetaMod to the SearchPaths section
-  #GAMEINFO_FILE="/home/steam/cs2/game/csgo/gameinfo.gi"
-  #if grep -q "Game    csgo/addons/metamod" "$GAMEINFO_FILE"; then
-  #    echo "MetaMod already added to SearchPaths."
-  #else
-  #    sed -i '/SearchPaths/r'<(echo '            Game    csgo/addons/metamod') "$GAMEINFO_FILE"
-  #    echo "MetaMod added to SearchPaths."
-  # fi
+  if grep -q "csgo/addons/metamod" "$GAMEINFO_FILE_PATH"; then
+    echo "MetaMod already added to SearchPaths."
+  else
+    line_number=$(grep -n "csgo_lv" "$GAMEINFO_FILE_PATH" | cut -d: -f1)
+    sed -i "${line_number}a\\\t\t\tGame\tcsgo/addons/metamod" "$GAMEINFO_FILE_PATH"
+    echo "MetaMod added to SearchPaths."
+  fi
 
   # Download the latest MatchZy build
-  # wget https://github.com/shobhit-pathak/MatchZy/releases/download/0.7.13/MatchZy-0.7.13-with-cssharp-linux.zip
+  wget "https://github.com/shobhit-pathak/MatchZy/releases/download/$MATCHZY_VERSION/MatchZy-$MATCHZY_VERSION-with-cssharp-linux.zip"
 
   # Extract MatchZy to the CS2 directory
-  # unzip MatchZy-0.7.13-with-cssharp-linux.zip -d /home/steam/cs2/game/csgo
+  unzip "MatchZy-$MATCHZY_VERSION-with-cssharp-linux.zip" -d "$CSGO_GAME_DIR"
 
   # Remove the downloaded MatchZy .zip file
-  # rm MatchZy-0.7.13-with-cssharp-linux.zip
+  rm "MatchZy-$MATCHZY_VERSION-with-cssharp-linux.zip"
 
   # Symlink the steamclient.so to expected path
-  ln -sf /home/steam/.local/share/Steam/steamcmd/linux64/steamclient.so /home/steam/.steam/sdk64/
+  ln -sf /home/steam/.local/share/Steam/steamcmd/linux64/steamclient.so "$SDK64_DIR"
+
+  # Replace MatchZy admins entry with proper admin
+  sed -i 's/"76561198154367261": ".*"/"$EAGLE_STEAM_ID": ""/' "$MATCHZY_ADMINS_FILE_PATH"
+
+  # Only whitelist admin for now until a match would Start
+  echo "$EAGLE_STEAM_ID" > "$MATCHZY_WHITELIST_FILE_PATH"
+
+  # Replace MatchZy server config with custom config from GamingHerd GitHub
+  wget -O "$MATCH_TEMP_SERVER_FILE_PATH" "$GITHUB_MATCHZY_SERVER_CONFIG_URL"
+  mv "$MATCH_TEMP_SERVER_FILE_PATH" "$MATCHZY_CONFIG_FILE_PATH"
+
+  echo "matchzy_remote_log_header_value \"$GH_MATCHZY_API_TOKEN\"" >> "$MATCHZY_CONFIG_FILE_PATH"
 
   # Start the CS2 server
-  /home/steam/cs2/game/bin/linuxsteamrt64/cs2 -dedicated +map de_dust2 +game_mode 1 +game_type 0 +sv_setsteamaccount "$STEAM_GAME_SERVER_TOKEN" -maxplayers 10
+  /home/steam/cs2/game/bin/linuxsteamrt64/cs2 -dedicated -console -usercon +map de_dust2 +game_mode 1 +game_type 0 +sv_setsteamaccount "$STEAM_GAME_SERVER_TOKEN" -maxplayers 10
 EOF
