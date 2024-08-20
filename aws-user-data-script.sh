@@ -37,6 +37,8 @@ STEAM_GAME_SERVER_TOKEN_JSON=$(aws secretsmanager get-secret-value --secret-id '
 STEAM_GAME_SERVER_TOKEN=$(echo "$STEAM_GAME_SERVER_TOKEN_JSON" | jq -r '."steam-game-server-token"')
 GH_MATCHZY_API_TOKEN_JSON=$(aws secretsmanager get-secret-value --secret-id 'gh-matchzy-api-token' --region $AWS_REGION --query 'SecretString' --output text)
 GH_MATCHZY_API_TOKEN=$(echo "$GH_MATCHZY_API_TOKEN_JSON" | jq -r '."gh-matchzy-api-token"')
+RCON_PASSWORD_JSON=$(aws secretsmanager get-secret-value --secret-id 'rcon-password' --region $AWS_REGION --query 'SecretString' --output text)
+RCON_PASSWORD=$(echo "$RCON_PASSWORD_JSON" | jq -r '."rcon-password"')
 
 # Check if the user already exists
 if id "$USER" &>/dev/null; then
@@ -98,7 +100,7 @@ sudo -i -u steam bash <<EOF
   wget "https://github.com/shobhit-pathak/MatchZy/releases/download/$MATCHZY_VERSION/MatchZy-$MATCHZY_VERSION-with-cssharp-linux.zip"
 
   # Extract MatchZy to the CS2 directory
-  unzip "MatchZy-$MATCHZY_VERSION-with-cssharp-linux.zip" -d "$CSGO_GAME_DIR"
+  unzip -o "MatchZy-$MATCHZY_VERSION-with-cssharp-linux.zip" -d "$CSGO_GAME_DIR"
 
   # Remove the downloaded MatchZy .zip file
   rm "MatchZy-$MATCHZY_VERSION-with-cssharp-linux.zip"
@@ -107,7 +109,7 @@ sudo -i -u steam bash <<EOF
   ln -sf /home/steam/.local/share/Steam/steamcmd/linux64/steamclient.so "$SDK64_DIR"
 
   # Replace MatchZy admins entry with proper admin
-  sed -i 's/"76561198154367261": ".*"/"$EAGLE_STEAM_ID": ""/' "$MATCHZY_ADMINS_FILE_PATH"
+  sed -i "s/\"76561198154367261\": \".*\"/\"$EAGLE_STEAM_ID\": \"\"/" "$MATCHZY_ADMINS_FILE_PATH"
 
   # Only whitelist admin for now until a match would Start
   echo "$EAGLE_STEAM_ID" > "$MATCHZY_WHITELIST_FILE_PATH"
@@ -117,6 +119,8 @@ sudo -i -u steam bash <<EOF
   mv "$MATCH_TEMP_SERVER_FILE_PATH" "$MATCHZY_CONFIG_FILE_PATH"
 
   echo "matchzy_remote_log_header_value \"$GH_MATCHZY_API_TOKEN\"" >> "$MATCHZY_CONFIG_FILE_PATH"
+
+  echo "rcon_password $RCON_PASSWORD" >> "$CSGO_GAME_DIR/cfg/server.cfg"
 
   # Start the CS2 server
   /home/steam/cs2/game/bin/linuxsteamrt64/cs2 -dedicated -console -usercon +map de_dust2 +game_mode 1 +game_type 0 +sv_setsteamaccount "$STEAM_GAME_SERVER_TOKEN" -maxplayers 10
