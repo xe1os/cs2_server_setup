@@ -35,8 +35,8 @@ STEAM_USER_PW_JSON=$(aws secretsmanager get-secret-value --secret-id 'ec2-steam-
 STEAM_USER_PW=$(echo "$STEAM_USER_PW_JSON" | jq -r '."ec2-user-steam-pw"')
 STEAM_GAME_SERVER_TOKEN_JSON=$(aws secretsmanager get-secret-value --secret-id 'steam-game-server-token' --region $AWS_REGION --query 'SecretString' --output text)
 STEAM_GAME_SERVER_TOKEN=$(echo "$STEAM_GAME_SERVER_TOKEN_JSON" | jq -r '."steam-game-server-token"')
-GH_MATCHZY_API_TOKEN_JSON=$(aws secretsmanager get-secret-value --secret-id 'gh-matchzy-api-token' --region $AWS_REGION --query 'SecretString' --output text)
-GH_MATCHZY_API_TOKEN=$(echo "$GH_MATCHZY_API_TOKEN_JSON" | jq -r '."gh-matchzy-api-token"')
+MATCHZY_API_KEY_JSON=$(aws secretsmanager get-secret-value --secret-id 'matchzy-api-key' --region $AWS_REGION --query 'SecretString' --output text)
+MATCHZY_API_KEY=$(echo "$MATCHZY_API_KEY_JSON" | jq -r '."matchzy-api-key"')
 RCON_PASSWORD_JSON=$(aws secretsmanager get-secret-value --secret-id 'rcon-password' --region $AWS_REGION --query 'SecretString' --output text)
 RCON_PASSWORD=$(echo "$RCON_PASSWORD_JSON" | jq -r '."rcon-password"')
 
@@ -118,7 +118,7 @@ sudo -i -u steam bash <<EOF
   wget -O "$MATCH_TEMP_SERVER_FILE_PATH" "$GITHUB_MATCHZY_SERVER_CONFIG_URL"
   mv "$MATCH_TEMP_SERVER_FILE_PATH" "$MATCHZY_CONFIG_FILE_PATH"
 
-  echo "matchzy_remote_log_header_value \"$GH_MATCHZY_API_TOKEN\"" >> "$MATCHZY_CONFIG_FILE_PATH"
+  echo "matchzy_remote_log_header_value \"$MATCHZY_API_KEY\"" >> "$MATCHZY_CONFIG_FILE_PATH"
 
   echo "rcon_password $RCON_PASSWORD" >> "$CSGO_GAME_DIR/cfg/server.cfg"
 
