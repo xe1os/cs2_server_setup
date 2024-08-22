@@ -118,10 +118,10 @@ sudo -i -u steam bash <<EOF
   wget -O "$MATCH_TEMP_SERVER_FILE_PATH" "$GITHUB_MATCHZY_SERVER_CONFIG_URL"
   mv "$MATCH_TEMP_SERVER_FILE_PATH" "$MATCHZY_CONFIG_FILE_PATH"
 
-  echo "matchzy_remote_log_header_value \"$MATCHZY_API_KEY\"" >> "$MATCHZY_CONFIG_FILE_PATH"
+  echo "matchzy_remote_log_header_value \"Bearer $MATCHZY_API_KEY\"" >> "$MATCHZY_CONFIG_FILE_PATH"
 
   echo "rcon_password $RCON_PASSWORD" >> "$CSGO_GAME_DIR/cfg/server.cfg"
 
   # Start the CS2 server
-  /home/steam/cs2/game/bin/linuxsteamrt64/cs2 -dedicated -console -usercon +map de_dust2 +game_mode 1 +game_type 0 +sv_setsteamaccount "$STEAM_GAME_SERVER_TOKEN" -maxplayers 10
+  /home/steam/cs2/game/bin/linuxsteamrt64/cs2 -dedicated -console -usercon +map de_dust2 +game_mode 1 +game_type 0 +sv_setsteamaccount "$STEAM_GAME_SERVER_TOKEN" -maxplayers 11
 EOF
