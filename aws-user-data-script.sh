@@ -15,7 +15,7 @@ MATCHZY_CONFIG_FILE_PATH="$MATCHZY_DIR/config.cfg"
 MATCH_TEMP_SERVER_FILE_PATH="/tmp/matchzy-server.cfg"
 EAGLE_STEAM_ID="76561197972259038"
 GAMEINFO_FILE_PATH="$CSGO_GAME_DIR/gameinfo.gi"
-MATCHZY_VERSION="0.8.1"
+MATCHZY_VERSION="0.8.2"
 METAMOD_FILE_NAME="mmsource-2.0.0-git1313-linux.tar.gz"
 METAMOD_URL_PATH_VERSION="2.0"
 
@@ -117,8 +117,6 @@ sudo -i -u steam bash <<EOF
   # Replace MatchZy server config with custom config from GamingHerd GitHub
   wget -O "$MATCH_TEMP_SERVER_FILE_PATH" "$GITHUB_MATCHZY_SERVER_CONFIG_URL"
   mv "$MATCH_TEMP_SERVER_FILE_PATH" "$MATCHZY_CONFIG_FILE_PATH"
-
-  echo "matchzy_remote_log_header_value \"Bearer $MATCHZY_API_KEY\"" >> "$MATCHZY_CONFIG_FILE_PATH"
 
   echo "rcon_password $RCON_PASSWORD" >> "$CSGO_GAME_DIR/cfg/server.cfg"
 
