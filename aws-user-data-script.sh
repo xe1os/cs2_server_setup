@@ -12,10 +12,11 @@ MATCHZY_DIR="$CSGO_GAME_DIR/cfg/MatchZy"
 MATCHZY_ADMINS_FILE_PATH="$MATCHZY_DIR/admins.json"
 MATCHZY_WHITELIST_FILE_PATH="$MATCHZY_DIR/whitelist.cfg"
 MATCHZY_CONFIG_FILE_PATH="$MATCHZY_DIR/config.cfg"
+MATCHZY_KNIFE_CONFIG_FILE_PATH="$MATCHZY_DIR/knife.cfg"
 MATCH_TEMP_SERVER_FILE_PATH="/tmp/matchzy-server.cfg"
 EAGLE_STEAM_ID="76561197972259038"
 GAMEINFO_FILE_PATH="$CSGO_GAME_DIR/gameinfo.gi"
-MATCHZY_VERSION="0.8.3"
+MATCHZY_VERSION="0.8.4"
 METAMOD_FILE_NAME="mmsource-2.0.0-git1313-linux.tar.gz"
 METAMOD_URL_PATH_VERSION="2.0"
 
@@ -35,8 +36,6 @@ STEAM_USER_PW_JSON=$(aws secretsmanager get-secret-value --secret-id 'ec2-steam-
 STEAM_USER_PW=$(echo "$STEAM_USER_PW_JSON" | jq -r '."ec2-user-steam-pw"')
 STEAM_GAME_SERVER_TOKEN_JSON=$(aws secretsmanager get-secret-value --secret-id 'steam-game-server-token' --region $AWS_REGION --query 'SecretString' --output text)
 STEAM_GAME_SERVER_TOKEN=$(echo "$STEAM_GAME_SERVER_TOKEN_JSON" | jq -r '."steam-game-server-token"')
-MATCHZY_API_KEY_JSON=$(aws secretsmanager get-secret-value --secret-id 'matchzy-api-key' --region $AWS_REGION --query 'SecretString' --output text)
-MATCHZY_API_KEY=$(echo "$MATCHZY_API_KEY_JSON" | jq -r '."matchzy-api-key"')
 RCON_PASSWORD_JSON=$(aws secretsmanager get-secret-value --secret-id 'rcon-password' --region $AWS_REGION --query 'SecretString' --output text)
 RCON_PASSWORD=$(echo "$RCON_PASSWORD_JSON" | jq -r '."rcon-password"')
 
@@ -110,6 +109,11 @@ sudo -i -u steam bash <<EOF
 
   # Replace MatchZy admins entry with proper admin
   sed -i "s/\"76561198154367261\": \".*\"/\"$EAGLE_STEAM_ID\": \"\"/" "$MATCHZY_ADMINS_FILE_PATH"
+
+  # Cange the knife round time to 69 seconds (nice)
+  sed -i "s/^mp_roundtime .*/mp_roundtime 1.15/" "$MATCHZY_KNIFE_CONFIG_FILE_PATH"
+  sed -i "s/^mp_roundtime .*/mp_roundtime_defuse 1.15/" "$MATCHZY_KNIFE_CONFIG_FILE_PATH"
+  sed -i "s/^mp_roundtime .*/mp_roundtime_hostage 1.15/" "$MATCHZY_KNIFE_CONFIG_FILE_PATH"
 
   # Only whitelist admin for now until a match would Start
   echo "$EAGLE_STEAM_ID" > "$MATCHZY_WHITELIST_FILE_PATH"
