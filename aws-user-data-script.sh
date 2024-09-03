@@ -16,7 +16,7 @@ MATCHZY_KNIFE_CONFIG_FILE_PATH="$MATCHZY_DIR/knife.cfg"
 MATCH_TEMP_SERVER_FILE_PATH="/tmp/matchzy-server.cfg"
 EAGLE_STEAM_ID="76561197972259038"
 GAMEINFO_FILE_PATH="$CSGO_GAME_DIR/gameinfo.gi"
-MATCHZY_VERSION="0.8.4"
+MATCHZY_VERSION="0.8.5"
 METAMOD_FILE_NAME="mmsource-2.0.0-git1313-linux.tar.gz"
 METAMOD_URL_PATH_VERSION="2.0"
 
@@ -123,7 +123,9 @@ sudo -i -u steam bash <<EOF
   mv "$MATCH_TEMP_SERVER_FILE_PATH" "$MATCHZY_CONFIG_FILE_PATH"
 
   echo "rcon_password $RCON_PASSWORD" >> "$CSGO_GAME_DIR/cfg/server.cfg"
+  echo "tv_enable 1" >> "$CSGO_GAME_DIR/cfg/server.cfg"
+  echo "tv_advertise_watchable 1" >> "$CSGO_GAME_DIR/cfg/server.cfg"
 
   # Start the CS2 server
-  /home/steam/cs2/game/bin/linuxsteamrt64/cs2 -dedicated -console -usercon +map de_dust2 +game_mode 1 +game_type 0 +sv_setsteamaccount "$STEAM_GAME_SERVER_TOKEN" -maxplayers 11
+  /home/steam/cs2/game/bin/linuxsteamrt64/cs2 -dedicated -console -usercon -nobots +map de_dust2 +game_mode 1 +game_type 0 +sv_setsteamaccount "$STEAM_GAME_SERVER_TOKEN" -maxplayers 11
 EOF
