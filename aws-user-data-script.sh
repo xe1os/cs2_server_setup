@@ -80,7 +80,7 @@ sudo -i -u steam bash <<EOF
 
   cd /home/steam
 
-  wget -O $SERVER_UPDATE_SCRIPT_FILENAME $GITHUB_CS2_SERVER_UPDATE_URL
+  wget -O "$SERVER_UPDATE_SCRIPT_FILENAME" "$GITHUB_CS2_SERVER_UPDATE_URL"
 
   cd "$CS2_DIR"
 
