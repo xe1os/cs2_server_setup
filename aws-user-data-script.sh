@@ -8,6 +8,8 @@ CS2_DIR="/home/steam/cs2"
 CSGO_GAME_DIR="$CS2_DIR/game/csgo"
 SDK64_DIR="/home/steam/.steam/sdk64/"
 GITHUB_MATCHZY_SERVER_CONFIG_URL="https://raw.githubusercontent.com/GamingHerd/cs_server_setup/main/matchzy-config.cfg"
+SERVER_UPDATE_SCRIPT_FILENAME="cs2-server-update-script.sh"
+GITHUB_CS2_SERVER_UPDATE_URL="https://raw.githubusercontent.com/GamingHerd/cs_server_setup/main/$SERVER_UPDATE_SCRIPT_FILENAME"
 MATCHZY_DIR="$CSGO_GAME_DIR/cfg/MatchZy"
 MATCHZY_ADMINS_FILE_PATH="$MATCHZY_DIR/admins.json"
 MATCHZY_WHITELIST_FILE_PATH="$MATCHZY_DIR/whitelist.cfg"
@@ -31,6 +33,7 @@ sudo apt-get install -y unzip
 sudo apt-get install -y jq
 sudo apt install -y lib32z1 lib32gcc-s1 lib32stdc++6 steamcmd
 sudo snap install aws-cli --classic
+sudo snap start amazon-ssm-agent
 
 STEAM_USER_PW_JSON=$(aws secretsmanager get-secret-value --secret-id 'ec2-steam-user-pw' --region $AWS_REGION --query 'SecretString' --output text)
 STEAM_USER_PW=$(echo "$STEAM_USER_PW_JSON" | jq -r '."ec2-user-steam-pw"')
@@ -74,6 +77,10 @@ sudo -i -u steam bash <<EOF
 
   # Run SteamCMD
   /usr/games/steamcmd +force_install_dir /home/steam/cs2 +login anonymous +app_update 730 validate +quit
+
+  cd /home/steam
+
+  wget -O $SERVER_UPDATE_SCRIPT_FILENAME $GITHUB_CS2_SERVER_UPDATE_URL
 
   cd "$CS2_DIR"
 
