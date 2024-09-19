@@ -3,20 +3,20 @@
 export DEBIAN_FRONTEND=noninteractive
 
 USER="steam"
-AWS_REGION="us-east-1"
+AWS_REGION="ap-south-1"
 CS2_DIR="/home/steam/cs2"
 CSGO_GAME_DIR="$CS2_DIR/game/csgo"
 SDK64_DIR="/home/steam/.steam/sdk64/"
-GITHUB_MATCHZY_SERVER_CONFIG_URL="https://raw.githubusercontent.com/GamingHerd/cs_server_setup/main/matchzy-config.cfg"
+GITHUB_MATCHZY_SERVER_CONFIG_URL="https://raw.githubusercontent.com/xe1os/cs2_server_setup/main/matchzy-config.cfg"
 SERVER_UPDATE_SCRIPT_FILENAME="cs2-server-update-script.sh"
-GITHUB_CS2_SERVER_UPDATE_URL="https://raw.githubusercontent.com/GamingHerd/cs_server_setup/main/$SERVER_UPDATE_SCRIPT_FILENAME"
+GITHUB_CS2_SERVER_UPDATE_URL="https://raw.githubusercontent.com/xe1os/cs2_server_setup/main/$SERVER_UPDATE_SCRIPT_FILENAME"
 MATCHZY_DIR="$CSGO_GAME_DIR/cfg/MatchZy"
 MATCHZY_ADMINS_FILE_PATH="$MATCHZY_DIR/admins.json"
 MATCHZY_WHITELIST_FILE_PATH="$MATCHZY_DIR/whitelist.cfg"
 MATCHZY_CONFIG_FILE_PATH="$MATCHZY_DIR/config.cfg"
 MATCHZY_KNIFE_CONFIG_FILE_PATH="$MATCHZY_DIR/knife.cfg"
 MATCH_TEMP_SERVER_FILE_PATH="/tmp/matchzy-server.cfg"
-EAGLE_STEAM_ID="76561197972259038"
+XE1OS_STEAM_ID="76561198043162355"
 GAMEINFO_FILE_PATH="$CSGO_GAME_DIR/gameinfo.gi"
 MATCHZY_VERSION="0.8.6"
 METAMOD_FILE_NAME="mmsource-2.0.0-git1313-linux.tar.gz"
@@ -116,7 +116,7 @@ sudo -i -u steam bash <<EOF
   ln -sf /home/steam/.local/share/Steam/steamcmd/linux64/steamclient.so "$SDK64_DIR"
 
   # Replace MatchZy admins entry with proper admin
-  sed -i "s/\"76561198154367261\": \".*\"/\"$EAGLE_STEAM_ID\": \"\"/" "$MATCHZY_ADMINS_FILE_PATH"
+  sed -i "s/\"76561198154367261\": \".*\"/\"$XE1OS_STEAM_ID\": \"\"/" "$MATCHZY_ADMINS_FILE_PATH"
 
   # Cange the knife round time to 69 seconds (nice)
   sed -i "s/^mp_roundtime .*/mp_roundtime 1.15/" "$MATCHZY_KNIFE_CONFIG_FILE_PATH"
@@ -124,7 +124,7 @@ sudo -i -u steam bash <<EOF
   sed -i "s/^mp_roundtime .*/mp_roundtime_hostage 1.15/" "$MATCHZY_KNIFE_CONFIG_FILE_PATH"
 
   # Only whitelist admin for now until a match would Start
-  echo "$EAGLE_STEAM_ID" > "$MATCHZY_WHITELIST_FILE_PATH"
+  echo "$XE1OS_STEAM_ID" > "$MATCHZY_WHITELIST_FILE_PATH"
 
   # Replace MatchZy server config with custom config from GamingHerd GitHub
   wget -O "$MATCH_TEMP_SERVER_FILE_PATH" "$GITHUB_MATCHZY_SERVER_CONFIG_URL"
